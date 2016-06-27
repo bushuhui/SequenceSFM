@@ -18,8 +18,8 @@ Only test on Linux Mint 17.1 64-bit.
     ./SequenceSFM.e -act test_sfm_tracker -f ./data/img_sfm_1s -fn_in ./data/img_sfm_1s
     
 ## Screenshot:
--![alt text](http://blog.adv-ci.com/wp-content/uploads/2013/05/Screenshot-2D-SLAM-1.png "Screenshot 1")
+-![alt text](https://raw.githubusercontent.com/bushuhui/SequenceSFM/master/data/SequenceSfM.png "Screenshot 1")
 
 
 ## Project homepage:
-http://www.adv-ci.com/blog/source/sequencesfm/
+http://www.adv-ci.com/blog/source/sequence-sfm/
