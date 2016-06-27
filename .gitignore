@@ -1,0 +1,9 @@
+*~
+*.o
+*.e
+*.so
+*.a
+*user
+*user.*
+*.qmdb
+*.qmake

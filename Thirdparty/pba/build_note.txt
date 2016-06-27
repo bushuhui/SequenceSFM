@@ -1,0 +1,1 @@
+make -f Makefile_no_gpu
