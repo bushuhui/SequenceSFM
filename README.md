@@ -12,13 +12,13 @@ Only test on Linux Mint 17.1 and Linux Mint 18 (64-bit).
 ## Build: 
 ```
 mkdir build; cd build
-cmkae ..
+cmake ..
 make
 ```
 
 ## Usage:
 ```
-./SequenceSFM.e -act test_sfm_tracker -f ../data/img_sfm_1s -fn_in ../data/img_sfm_1s
+./SequenceSFM fn_in=../data/img_sfm_1s
 ```
     
 ## Screenshot:
