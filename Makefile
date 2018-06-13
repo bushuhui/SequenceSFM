@@ -31,8 +31,9 @@ QT_CFLAGS  = -DQT_NO_DEBUG -DQT_XML_LIB -DQT_OPENGL_LIB -DQT_GUI_LIB -DQT_CORE_L
                 -I/usr/include/qt4/QtGui \
                 -I/usr/include/qt4/QtOpenGL \
                 -I/usr/include/qt4/QtXml \
-                -I/usr/include/qt4
-QT_LDFLAGS = -lQtGui -lQtCore -lQtXml -lQtOpenGL -lQGLViewer
+                -I/usr/include/qt4 \
+                -L/usr/lib/x86_64-linux-gnu
+QT_LDFLAGS = -lQtGui -lQtCore -lQtXml -lQtOpenGL -lQGLViewer-qt4
 
 
 ################################################################################

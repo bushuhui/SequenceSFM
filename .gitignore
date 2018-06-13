@@ -7,3 +7,8 @@
 *user.*
 *.qmdb
 *.qmake
+.qglviewer.xml
+SequenceSFM_args.txt
+Thirdparty/OpenSURF/surf
+Thirdparty/pba/bin/driver_no_gpu
+src/moc_utils_gui.cpp
