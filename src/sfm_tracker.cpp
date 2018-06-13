@@ -22,6 +22,7 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 
+#include "GSLAM/core/Svar.h"
 
 #include "sfm_utils.h"
 #include "sfm_tracker.h"
@@ -36,16 +37,10 @@
 SfM_Tracker::SfM_Tracker()
 {
     init();
-}
-
-SfM_Tracker::SfM_Tracker(CParamArray *pa_)
-{
-    init();
-
-    pa = pa_;
 
     loadConf();
 }
+
 
 SfM_Tracker::~SfM_Tracker()
 {
@@ -54,7 +49,6 @@ SfM_Tracker::~SfM_Tracker()
 
 void SfM_Tracker::init(void)
 {
-    pa = NULL;
     pcdViewer = NULL;
 
     frmeQueueBegIndex = 0;
@@ -119,7 +113,7 @@ int SfM_Tracker::appendFrame(Mat &imgIn, string fnImg)
     printf("===============================================\n");
 
     // append to frame queue
-    frame = new SfM_Frame(frameCount++, imgIn, pa);
+    frame = new SfM_Frame(frameCount++, imgIn);
     frame->fnImg = fnImg;
     frameQueue.push_back(frame);
 
@@ -929,72 +923,55 @@ int SfM_Tracker::bundleAdjustFrames(void)
 
 int SfM_Tracker::loadConf(void)
 {
-    if( pa != NULL ) {
-        pa->i("frameQueue_maxSize", frameQueue_maxSize);
+    frameQueue_maxSize = svar.GetInt("frameQueue_maxSize", 99999);
 
-        pa->i("tracker_keyFrameMinInterval", tracker_keyFrameMinInterval);
-        pa->i("tracker_keyFrameMaxInterval", tracker_keyFrameMaxInterval);
-        pa->d("tracker_dispThreshold", tracker_dispThreshold);
-        pa->i("tracker_baselineMinImages", tracker_baselineMinImages);
-        pa->i("tracker_baselineMaxImages", tracker_baselineMaxImages);
-        pa->i("tracker_keyFrameSearchRange", tracker_keyFrameSearchRange);
+    tracker_keyFrameMinInterval = svar.GetInt("tracker_keyFrameMinInterval", 5);
+    tracker_keyFrameMaxInterval = svar.GetInt("tracker_keyFrameMaxInterval", 15);
+    tracker_dispThreshold = svar.GetDouble("tracker_dispThreshold", 60);
+    tracker_baselineMinImages = svar.GetInt("tracker_baselineMinImages", 10);
+    tracker_baselineMaxImages = svar.GetInt("tracker_baselineMaxImages", 20);
+    tracker_keyFrameSearchRange = svar.GetInt("tracker_keyFrameSearchRange", 4);
 
-        pa->d("tracker_visScale", tracker_visScale);
+    tracker_visScale = svar.GetDouble("tracker_visScale", 0.5);
 
-        // load camera calibiaration data
-        {
-#if 1
-            double      fx, fy, cx, cy;
-            double      d[5];
-            string      camName = "cam_138s";
 
-            pa->s("cam_name", camName);
+    // load camera calibiaration data
+    {
+        double      fx, fy, cx, cy;
+        double      d[5];
+        string      camName = svar.GetString("cam_name", "cam_138s");
 
-            pa->d(camName + ".fx", fx);
-            pa->d(camName + ".fy", fy);
-            pa->d(camName + ".cx", cx);
-            pa->d(camName + ".cy", cy);
 
-            pa->d(camName + ".d0", d[0]);
-            pa->d(camName + ".d1", d[1]);
-            pa->d(camName + ".d2", d[2]);
-            pa->d(camName + ".d3", d[3]);
-            pa->d(camName + ".d4", d[4]);
+        fx = svar.GetDouble(camName + ".fx", 600);
+        fy = svar.GetDouble(camName + ".fy", 600);
+        cx = svar.GetDouble(camName + ".cx", 320);
+        cy = svar.GetDouble(camName + ".cy", 240);
 
-            cam_k = cv::Mat::eye(3, 3, CV_64FC1);
-            cam_k.at<double>(0, 0) = fx;
-            cam_k.at<double>(1, 1) = fy;
-            cam_k.at<double>(0, 2) = cx;
-            cam_k.at<double>(1, 2) = cy;
+        d[0] = svar.GetDouble(camName+".d0", 0.0);
+        d[1] = svar.GetDouble(camName+".d1", 0.0);
+        d[2] = svar.GetDouble(camName+".d2", 0.0);
+        d[3] = svar.GetDouble(camName+".d3", 0.0);
+        d[4] = svar.GetDouble(camName+".d4", 0.0);
 
-            cam_d = cv::Mat::zeros(5, 1, CV_64FC1);
-            cam_d.at<double>(0) = d[0];
-            cam_d.at<double>(1) = d[1];
-            cam_d.at<double>(2) = d[2];
-            cam_d.at<double>(3) = d[3];
-            cam_d.at<double>(4) = d[4];
 
-            cam_kinv = cam_k.inv();
+        cam_k = cv::Mat::eye(3, 3, CV_64FC1);
+        cam_k.at<double>(0, 0) = fx;
+        cam_k.at<double>(1, 1) = fy;
+        cam_k.at<double>(0, 2) = cx;
+        cam_k.at<double>(1, 2) = cy;
 
-            cout << "cam_k: " << cam_k << "\n\n";
-            cout << "cam_d: " << cam_d << "\n\n";
-#else
-            FileStorage     fs;
-            string cam_calFN = "cam_138.yml";
+        cam_d = cv::Mat::zeros(5, 1, CV_64FC1);
+        cam_d.at<double>(0) = d[0];
+        cam_d.at<double>(1) = d[1];
+        cam_d.at<double>(2) = d[2];
+        cam_d.at<double>(3) = d[3];
+        cam_d.at<double>(4) = d[4];
 
-            pa->s("cam_calFN", cam_calFN);
+        cam_kinv = cam_k.inv();
 
-            fs.open(cam_calFN, FileStorage::READ);
-            if( !fs.isOpened() ) {
-                dbg_pe("Can not open file: %s\n", cam_calFN.c_str());
-            } else {
-                fs["camera_matrix"]           >> cam_k;
-                fs["distortion_coefficients"] >> cam_d;
+        cout << "cam_k: " << cam_k << "\n\n";
+        cout << "cam_d: " << cam_d << "\n\n";
 
-                cam_kinv = cam_k.inv();
-            }
-#endif
-        }
     }
 }
 
@@ -1029,7 +1006,7 @@ int SfM_Tracker::savePointclouds(char *fname)
 
     // get output file name
     if( fname == NULL ) {
-        pa->s("fn_in", fn_path);
+        fn_path = svar.GetString("fn_in", "../data/img_sfm_1s");
         sprintf(fn_buf, "%s/pcd_all.nvm", fn_path.c_str());
     } else {
         strcpy(fn_buf, fname);

@@ -24,6 +24,7 @@
 #include <opencv2/gpu/gpumat.hpp>
 #include <opencv2/nonfree/gpu.hpp>
 
+#include "GSLAM/core/Svar.h"
 
 #include "utils.h"
 
@@ -40,15 +41,13 @@ using namespace cv;
 
 SfM_Frame::SfM_Frame()
 {
-    pa = NULL;
     idx = -1;
     isKeyFrame = 0;
 }
 
-SfM_Frame::SfM_Frame(int idx_, Mat &imgIn, CParamArray *pa_)
+SfM_Frame::SfM_Frame(int idx_, Mat &imgIn)
 {
     idx = idx_;
-    pa = pa_;
     isKeyFrame = 0;
 
     setImage(imgIn);
@@ -91,10 +90,8 @@ int SfM_Frame::detectKeypoints(void)
     SurfDescriptorExtractor *extractor;
 
     // load parameters
-    if( pa != NULL ) {
-        pa->s("kp_detector", fd_name);
-        pa->d("kp_SURF_minHessian", SURF_minHessian);
-    }
+    fd_name = svar.GetString("kp_detector", "SURF");
+    SURF_minHessian = svar.GetInt("kp_SURF_minHessian", 50);
 
     /////////////////////////////////////////////////
     /// create feature detector
@@ -104,7 +101,7 @@ int SfM_Frame::detectKeypoints(void)
     } else if ( fd_name == "FAST" ) {
         detector = new FastFeatureDetector();
     } else if ( fd_name == "PyramidFAST" )  {
-        detector = FeatureDetector::create("PyramidFAST");
+        //detector = FeatureDetector::create("PyramidFAST");
     } else if ( fd_name == "SIFT" ) {
         detector = new SiftFeatureDetector;
     }
@@ -124,12 +121,7 @@ int SfM_Frame::detectKeypoints(void)
 
 int SfM_Frame::matchFrame(SfM_Frame &fp, int filtByFundMatrix)
 {
-    string  match_method = "BFMatcher";
-
-    if( pa != NULL ) {
-        pa->s("match_method", match_method);
-    }
-
+    string  match_method = svar.GetString("match_method", "BFMatcher");
 
     // if not detected keypoint
     if( kpDesc.empty() ) {
@@ -151,18 +143,12 @@ int SfM_Frame::matchFrame(SfM_Frame &fp, int filtByFundMatrix)
     /// filter wrong correspondences by histogram
     /////////////////////////////////////////////////
     if( 1 ) {
-        int             match_filter_histn = 100;
-        double          match_filter_sign = 0.7;
-        double          tracker_dispThreshold = 60;
+        int             match_filter_histn = svar.GetInt("match_filter_histn", 100);
+        double          match_filter_sign = svar.GetDouble("match_filter_sign", 0.7);
+        double          tracker_dispThreshold = svar.GetDouble("tracker_dispThreshold", 60);
 
         double          d_mean, d_sig;
 
-        // load parameters
-        if( pa != NULL ) {
-            pa->i("match_filter_histn", match_filter_histn);
-            pa->d("match_filter_sign", match_filter_sign);
-            pa->d("tracker_dispThreshold", tracker_dispThreshold);
-        }
 
         int     i;
         Point2f p1, p2;

@@ -24,10 +24,6 @@ using namespace std;
 using namespace cv;
 
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-int load_camera_parameters(const char *fname, Mat &cam_k, Mat &cam_d);
-
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -50,36 +46,31 @@ int MatchFeatures_of(Mat &img_1, Mat &img_2,
                      vector<DMatch> &matches,
                      vector<KeyPoint> &pts_1, vector<KeyPoint> &pts_2,
                      vector<KeyPoint> &pts_n1, vector<KeyPoint> &pts_n2,
-                     Mat &fm,
-                     CParamArray *pa=NULL);
+                     Mat &fm);
 
 int MatchFeatures_SURF(Mat &img_1, Mat &img_2,
                      vector<DMatch> &matches,
                      vector<KeyPoint> &pts_1, vector<KeyPoint> &pts_2,
                      vector<KeyPoint> &pts_n1, vector<KeyPoint> &pts_n2,
-                     Mat &fm,
-                     CParamArray *pa=NULL);
+                     Mat &fm);
 
 int MatchFeatures_OpenSURF(Mat &img_1, Mat &img_2,
                      vector<DMatch> &matches,
                      vector<KeyPoint> &pts_1, vector<KeyPoint> &pts_2,
                      vector<KeyPoint> &pts_n1, vector<KeyPoint> &pts_n2,
-                     Mat &fm,
-                     CParamArray *pa=NULL);
+                     Mat &fm);
 
 int MatchFeatures_SURF_CUDA(Mat &img_1, Mat &img_2,
                      vector<DMatch> &matches,
                      vector<KeyPoint> &pts_1, vector<KeyPoint> &pts_2,
                      vector<KeyPoint> &pts_n1, vector<KeyPoint> &pts_n2,
-                     Mat &fm,
-                     CParamArray *pa=NULL);
+                     Mat &fm);
 
 int MatchFeatures_SIFT(Mat &img_1, Mat &img_2,
                      vector<DMatch> &matches,
                      vector<KeyPoint> &pts_1, vector<KeyPoint> &pts_2,
                      vector<KeyPoint> &pts_n1, vector<KeyPoint> &pts_n2,
-                     Mat &fm,
-                     CParamArray *pa=NULL);
+                     Mat &fm);
 
 
 ////////////////////////////////////////////////////////////////////////////////

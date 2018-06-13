@@ -34,7 +34,6 @@ class SfM_Tracker
 {
 public:
     SfM_Tracker();
-    SfM_Tracker(CParamArray *pa_);
     ~SfM_Tracker();
 
     int setPCDViewer(PCD_Viewer *pcdv);
@@ -85,8 +84,6 @@ public:
     PCD_Viewer      *pcdViewer;
 
 protected:
-    CParamArray     *pa;
-
     int             frameQueue_maxSize;
 
     int             tracker_keyFrameMinInterval;

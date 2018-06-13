@@ -32,7 +32,7 @@ class SfM_Frame
 {
 public:
     SfM_Frame();
-    SfM_Frame(int idx_, Mat &imgIn, CParamArray *pa_);
+    SfM_Frame(int idx_, Mat &imgIn);
     ~SfM_Frame();
 
     int setImage(Mat &imgIn);
@@ -73,8 +73,6 @@ public:
     string                  fnImg;              // image file name
 
 protected:
-    CParamArray             *pa;
-
     void _free(void);
 };
 

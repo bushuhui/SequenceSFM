@@ -35,8 +35,9 @@
 
 #include <Eigen/Dense>
 
-#include "klt.h"
 #include "surflib.h"
+
+#include "GSLAM/core/Svar.h"
 
 #include "utils.h"
 #include "utils_math.h"
@@ -49,27 +50,7 @@
 using namespace std;
 using namespace cv;
 using namespace cv::gpu;
-using namespace cv_klt;
 
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-int load_camera_parameters(const char *fname, Mat &cam_k, Mat &cam_d)
-{
-    FileStorage     fs;
-
-    fs.open(fname, FileStorage::READ);
-    if( !fs.isOpened() ) {
-        dbg_pe("Can not open file: %s\n", fname);
-        return -1;
-    }
-
-    fs["camera_matrix"]           >> cam_k;
-    fs["distortion_coefficients"] >> cam_d;
-
-    return 0;
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -134,19 +115,12 @@ int MatchFeatures_of(Mat &img_1, Mat &img_2,
                      vector<DMatch> &matches,
                      vector<KeyPoint> &pts_1, vector<KeyPoint> &pts_2,
                      vector<KeyPoint> &pts_n1, vector<KeyPoint> &pts_n2,
-                     Mat &fm,
-                     CParamArray *pa)
+                     Mat &fm)
 {
-    string                  fd_name = "PyramidFAST";
+    string                  fd_name = svar.GetString("fd_name", "PyramidFAST");
 
     Ptr<FeatureDetector>    detector;
-    int                     SURF_minHessian = 400;
-
-    // load parameters
-    if( pa != NULL ) {
-        pa->s("fd_name", fd_name);
-        pa->i("SURF_minHessian", SURF_minHessian);
-    }
+    int                     SURF_minHessian = svar.GetInt("SURF_minHessian", 400);
 
     matches.clear();
 
@@ -158,7 +132,7 @@ int MatchFeatures_of(Mat &img_1, Mat &img_2,
     } else if ( fd_name == "FAST" ) {
         detector = new FastFeatureDetector();
     } else if ( fd_name == "PyramidFAST" )  {
-        detector = FeatureDetector::create("PyramidFAST");
+        //detector = FeatureDetector::create("PyramidFAST");
     }
 
     detector->detect(img_1, pts_1);
@@ -278,24 +252,16 @@ int MatchFeatures_SURF(Mat &img_1, Mat &img_2,
                      vector<DMatch> &matches,
                      vector<KeyPoint> &pts_1, vector<KeyPoint> &pts_2,
                      vector<KeyPoint> &pts_n1, vector<KeyPoint> &pts_n2,
-                     Mat &fm,
-                     CParamArray *pa)
+                     Mat &fm)
 {
-    string                  fd_name = "SURF";
-    double                  SURF_minHessian = 400;
+    string                  fd_name = svar.GetString("fd_name", "SURF");
+    double                  SURF_minHessian = svar.GetDouble("SURF_minHessian", 400);
 
     FeatureDetector         *detector, *detector2;
     SurfDescriptorExtractor *extractor, *extractor2;
     Mat                     descriptors_1, descriptors_2;
 
     SURF_parallel_data      spd;
-
-    // load parameters
-    if( pa != NULL ) {
-        pa->s("fd_name", fd_name);
-        pa->d("SURF_minHessian", SURF_minHessian);
-    }
-
 
     /////////////////////////////////////////////////
     /// create feature detector
@@ -307,8 +273,8 @@ int MatchFeatures_SURF(Mat &img_1, Mat &img_2,
         detector = new FastFeatureDetector();    
         detector2 = new FastFeatureDetector();
     } else if ( fd_name == "PyramidFAST" )  {
-        detector = FeatureDetector::create("PyramidFAST");
-        detector2 = FeatureDetector::create("PyramidFAST");
+        //detector = FeatureDetector::create("PyramidFAST");
+        //detector2 = FeatureDetector::create("PyramidFAST");
     } else if ( fd_name == "SIFT" ) {
         detector = new SiftFeatureDetector;
         detector2 = new SiftFeatureDetector;
@@ -533,8 +499,7 @@ int MatchFeatures_OpenSURF(Mat &img_1, Mat &img_2,
                      vector<DMatch> &matches,
                      vector<KeyPoint> &pts_1, vector<KeyPoint> &pts_2,
                      vector<KeyPoint> &pts_n1, vector<KeyPoint> &pts_n2,
-                     Mat &fm,
-                     CParamArray *pa)
+                     Mat &fm)
 {
     IplImage    i1, i2;
     IpVec       ipts1, ipts2;
@@ -617,17 +582,10 @@ int MatchFeatures_SURF_CUDA(Mat &img_1, Mat &img_2,
                      vector<DMatch> &matches,
                      vector<KeyPoint> &pts_1, vector<KeyPoint> &pts_2,
                      vector<KeyPoint> &pts_n1, vector<KeyPoint> &pts_n2,
-                     Mat &fm,
-                     CParamArray *pa)
+                     Mat &fm)
 {
-    string                  fd_name = "SURF";
-    int                     SURF_minHessian = 400;
-
-    // load parameters
-    if( pa != NULL ) {
-        pa->s("fd_name", fd_name);
-        pa->i("SURF_minHessian", SURF_minHessian);
-    }
+    string                  fd_name = svar.GetString("fd_name", "SURF");
+    int                     SURF_minHessian = svar.GetInt("SURF_minHessian", 400);
 
     double t = getTickCount(), t1, t2;
 
@@ -712,8 +670,7 @@ int MatchFeatures_SIFT(Mat &img_1, Mat &img_2,
                      vector<DMatch> &matches,
                      vector<KeyPoint> &pts_1, vector<KeyPoint> &pts_2,
                      vector<KeyPoint> &pts_n1, vector<KeyPoint> &pts_n2,
-                     Mat &fm,
-                     CParamArray *pa)
+                     Mat &fm)
 {
     Ptr<FeatureDetector>    detector;
     SiftDescriptorExtractor extractor;
@@ -1729,16 +1686,9 @@ int CloudPoint_FilterZ(vector<DMatch> &matches,   vector<DMatch> &matches_out,
     int                             k, kk;
     vector<CloudPoint>::iterator    it;
 
-    double                  tracker_baselineZFilter_r1 = 1.0/8.0;
-    double                  tracker_baselineZFilter_r2 = 7.0/8.0;
-    double                  tracker_baselineZFilter_nsig = 8.0;
-
-    CParamArray *pa = pa_get();
-    if( pa != NULL ) {
-        pa->d("tracker_baselineZFilter_r1", tracker_baselineZFilter_r1);
-        pa->d("tracker_baselineZFilter_r2", tracker_baselineZFilter_r2);
-        pa->d("tracker_baselineZFilter_nsig", tracker_baselineZFilter_nsig);
-    }
+    double                  tracker_baselineZFilter_r1 = svar.GetDouble("tracker_baselineZFilter_r1", 1.0/8.0);
+    double                  tracker_baselineZFilter_r2 = svar.GetDouble("tracker_baselineZFilter_r2", 7.0/8.0);
+    double                  tracker_baselineZFilter_nsig = svar.GetDouble("tracker_baselineZFilter_nsig", 8.0);
 
     matches_out.clear();
     cloud_out.clear();

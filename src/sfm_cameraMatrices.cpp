@@ -16,9 +16,7 @@
 
 #include <opencv2/calib3d/calib3d.hpp>
 
-#ifdef USE_EIGEN
 #include <Eigen/Eigen>
-#endif
 
 #include "sfm_utils.h"
 #include "sfm_cameraMatrices.h"

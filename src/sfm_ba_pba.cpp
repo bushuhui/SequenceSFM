@@ -10,11 +10,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
+#ifdef USE_PBA
 #include <pba.h>
+#endif
 
 #include "sfm_ba.h"
 
-#define USE_PBA
 
 //count number of 2D measurements
 int Count2DMeasurements_pba(const vector<CloudPoint>& pointcloud)
@@ -162,6 +164,10 @@ int adjustBundle_pba(vector<CloudPoint> &pointcloud,
         P(1, 0) = q[3]; P(1, 1) = q[4]; P(1, 2) = q[5]; P(1, 3) = c[1];
         P(2, 0) = q[6]; P(2, 1) = q[7]; P(2, 2) = q[8]; P(2, 3) = c[2];
     }
+#else
+    return adjustBundle_ssba(pointcloud,
+                      camIntrinsic,
+                      imgpts, Pmats);
 #endif
 
     return 0;

@@ -14,9 +14,11 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include "GSLAM/core/Svar.h"
+#include "GImageIO/GImage_IO.h"
+
 #include "utils.h"
 #include "utils_gui.h"
-
 #include "sfm_tracker.h"
 
 using namespace std;
@@ -33,15 +35,10 @@ void *test_sfm_tracker_threadfunc(void *args)
     StringArray     fl_img;
     vector<string>  img_list;
 
-    CParamArray     *pa = pa_get();
-
-    SfM_Tracker     sfmTracker(pa);
-
-    int             i;
 
     // load parameters
-    fn_in = "./data/img_sfm_1s";
-    pa->s("fn_in", fn_in);
+    fn_in = svar.GetString("fn_in", "../data/img_sfm_1s");
+    svar.ParseFile(fn_in+".ini");
 
     // get image file names
     path_lsdir(fn_in, fl_img);
@@ -53,10 +50,11 @@ void *test_sfm_tracker_threadfunc(void *args)
     viewer->setSceneCenter(qglviewer::Vec(0, 0, 0));
     viewer->setSceneRadius(1000.0);
 
-    sfmTracker.setPCDViewer(viewer);
+    SfM_Tracker *sfmTracker = new SfM_Tracker();
+    sfmTracker->setPCDViewer(viewer);
 
     // list images
-    i = 0;
+    int i = 0;
     while(1) {
         if( i >= fl_img.size() ) break;
 
@@ -74,10 +72,12 @@ void *test_sfm_tracker_threadfunc(void *args)
 
     for(i=0; i<img_list.size(); i++) {
         fn_img = path_join(fn_in, img_list[i]);
-        Mat img = imread(fn_img);
+        Mat img = GSLAM::imread(fn_img.c_str());
 
-        sfmTracker.appendFrame(img, fn_img);
+        sfmTracker->appendFrame(img, fn_img);
     }
+
+    delete sfmTracker;
 
     return 0;
 }
@@ -86,35 +86,12 @@ void *test_sfm_tracker_threadfunc(void *args)
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-int         g_argc;
-char        **g_argv;
-
-int test_sfm_tracker(CParamArray *pa)
-{
-    qt_start(g_argc, g_argv,
-             test_sfm_tracker_threadfunc,
-             NULL);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-struct RTK_TestFunctionArray g_fa[] =
-{
-    RTK_FUNC_TEST_DEF(test_sfm_tracker,         "Detect keypoints"),
-
-    {NULL,  "NULL",  "NULL"},
-};
-
-
 int main(int argc, char *argv[])
 {
-    CParamArray     *pa = pa_create();
+    svar.ParseMain(argc, argv);
 
-    g_argc = argc;
-    g_argv = argv;
-
-    return rtk_test_main(argc, argv,
-                         g_fa, *pa);
+    qt_start(argc, argv,
+             test_sfm_tracker_threadfunc,
+             NULL);
 }
 
